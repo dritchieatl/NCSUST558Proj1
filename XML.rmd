@@ -1,0 +1,143 @@
+---
+title: "Proj1-XLM"
+author: "David Ritchie"
+date: "10/14/2019"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: No
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+#  What is an XML file?
+
+An XML (Extensible Markup Language) is a data file formatted similar to an html document.  It is accessing information at the database vs. a spreadsheet format, which would require much more memory due to the duplication of information as a spreadsheet.  It uses custom tags to define objects within each object and can be thought of as a text-based database.  Common terms: node, root, tree, children, etc.  This type of file is common and can be opened by many programs depending on your operating system. They have become the standard way of storing and transferring data between programs over the internet.  More can be learned at cran.r-progect.org <https://cran.r-project.org/web/packages/XML/XML.pdf> and fileinfo.com <https://fileinfo.com/extension/xml>.
+
+
+##  There are 2 main packages to load in XML files.  
+  XLM - is the original
+  xml2 - is similar but takes care of memory management for you.  It will automatically free the memory used by an XML document as soon as the last reference to it goes away, has a very simple class hierarchy, and more convient handling of namespaces in Xpath expressions. 
+
+More can be learned at <https://www.rdocumentation.org/packages/xml2/versions/1.2.2>
+
+
+##  Loading in the XML file.
+
+I chose to use XML to load the data.  The syntax didn't appear to be too difficult and it worked fine for my needs.  At this time I don't have any system requirements that would require any of the xml2 expertise.  
+
+ Load library(XML) and then access .xml http via xmlTreeParse.  Once done, make sure the file loaded.  Use the class() function to make sure it's as a XMLDocument or XMLAbstractDocument.
+ 
+``` {r , echo = FALSE, eval = FALSE}
+install.packages("XML") 
+ 
+```
+ 
+``` {r infile, echo = TRUE, eval = TRUE}
+library(XML)
+xmlfile<-(xmlParse("http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/data/mondial/mondial-3.0.xml"))
+class(xmlfile)
+
+```
+
+When you take a look at top node, you see the information but not overly usable outside of XML.  This is a one to many approach which needs to be formatted for easier use.  Currently its a list of lists.  It has 955 elements and is 1.3 Mb in size.  
+
+``` {r TopNode, echo = TRUE, eval = TRUE}
+topxml<- xmlRoot(xmlfile)
+
+```
+
+
+We can put the data into a versatile dataframe by using xmlSApply and then transposing the results.
+
+``` {r TopNodedf, echo = TRUE, eval = TRUE}
+topxml <- xmlSApply(topxml, 
+                    function(x) xmlSApply(x, xmlValue))
+```
+
+``` {r , echo= TRUE, eval = TRUE}
+xml_df<- data.frame(t(topxml), 
+                    row.names=NULL)
+str(xml_df)
+```
+
+With a dataframe of 2,000 observations and 9 variables, we can now produce some anaylsis.  Notice the size difference from the large list of 955 elements.  
+
+The 9 variables are:
+  P_PARTKEY - Part key (what would be considered an observation number)
+  P_NAME - Part name
+  P_MFGR - Part manufacturer
+  P_BRAND - Part brand number (brand#54, brand#3, etc.)
+  P_TYPE - Part type
+  P_SIZE - Part size
+  P_CONTAINER - Part conatiner description
+  P_RETAILPRICE - Part retail price
+  P_COMMENT - General comments about the part
+
+
+Removal of some of the unwanted variables related to anaylsis.
+
+``` {r cleanUp, echo = FALSE, eval = TRUE}
+xml_df<- xml_df %>% select(P_MFGR, P_BRAND, P_SIZE, P_CONTAINER, P_RETAILPRICE)
+```
+
+``` {r, echo = FALSE, eval = TRUE}
+xml_df$P_SIZE<-as.numeric(xml_df$P_SIZE)
+xml_df$P_RETAILPRICE<-as.numeric(xml_df$P_RETAILPRICE)
+head(xml_df)
+
+```
+
+``` {r , echo = FALSE, eval = FALSE}
+install.packages("knitr")
+install.packages("kableExtra")
+
+
+```
+
+``` {r Analysis, echo = FALSE, eval = TRUE}
+library(knitr)
+library(kableExtra)
+xml1<- head(xml_df)
+xml2<- kable(xml1, format = "html") %>% kable_styling(bootstrap_options = c("striped"))
+xml2
+
+
+```
+
+
+Which manufacturer sends the most product?
+``` {r Plot, echo = FALSE, eval = TRUE}
+library(tidyverse)
+g<- ggplot2::ggplot(data = xml_df, aes(x=xml_df$P_MFGR)) 
+g + geom_bar() +
+  labs (x = " By Manufacturer")
+
+
+```
+
+Based on the data, all 5 manufacturers have very similar outputs. 
+
+``` {r boxPlot, echo = FALSE, eval = TRUE}
+
+g1<- ggplot(xml_df, aes(x = P_MFGR, y = P_SIZE))
+
+g1 + geom_boxplot() +
+  labs(title = "Boxplot of Part Size by each Manufacturer")
+```
+When reviewing this, it looks like all the maunfacturers have very similiar sizes overall.  This would be an important factor to consider if you have a global operation and each manufacturer would need to support the entire brand should a single site have any issues.  
+
+
+
+``` {r, echo=FALSE, eval = TRUE}
+g3<- ggplot(xml_df, aes(x = P_MFGR, y = P_RETAILPRICE))
+g3 + geom_point() + geom_jitter()
+
+
+```
+
+Once again, the data appears to support very similar relationships among all manufacturers.  

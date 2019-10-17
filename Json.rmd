@@ -1,0 +1,112 @@
+---
+title: "Proj1-JSON"
+author: "David Ritchie"
+date: "10/16/2019"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: No
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(jsonlite)
+
+```
+
+#  JSON files
+
+##  What is JSON?
+
+JSON (JavaScript Object Notation) is a file that stores data structures in a JavaScript format which is a standard data interchange format.  It is primarily used for transmitting data between a web appliation and a server.  The files are text based and can be edited via a text editor.  
+
+There are may programs that open JSON files depending on a particular operating system.  More about JSON files can be found at FileInfo. <http://fileinfo.com/extension/json> 
+
+
+##  R packages that read in JSON
+
+R has 3 major packages for reading in JSON files, as well as writing to a JSON file.  rjson, jsonlite and rapidjsonr.  
+  rjson - reads in JSON array data to unnamed list and JSON objects to named lists.  More can be learned at cran.r-project.org.<https://cran.r-project.org/web/packages/rjson/rjson.pdf>
+  jsonlite - based on rjson but optimized for the web.  Its strength is that it implements a bidirectional mapping, without the loss of type or infomation.  This decreases the need for additional data manipulation/simplification.  More can be learned at cran.r-project.org <https://cran.r-project.org/web/packages/jsonlite/vignettes/json-aaquickstart.html> or <https://www.tutorialspoint.com/r/r_json_files.htm>
+  rapidjsonr - json parser and generator for C++.  More can be learned at cran.r-project.org. <https://cran.r-project.org/web/packages/rapidjsonr/rapidjsonr.pdf>
+
+
+When comparing rjson vs. jsonlite, the simplification of data during the read-in makes it a friendlier tool.
+
+The following data example comes from <https://www.sitepoint.com/database-json-file/> and a hierarchical structure and would require more manipulation due to the nesting structure.  The 'simplifyVector' argument simplifies nested lists into vectors and dataframes.   
+```{r CreatedFile1, echo = TRUE, eval=TRUE}
+
+result <- read_json("C:/Users/User/Documents/Proj1DavidR/example2.json", simplifyVector = TRUE)
+str(result)
+```
+
+
+The 2 main agruments on fromjson include:
+  simplifyVector: which will simplify nested lists into vectors or dataframes.
+  flatten: which automatically flattens nested data frames into a single non-nested data frame.  Its defaulted as FALSE.  
+  
+  
+##  What information can be gathered from the data?
+
+Overall, the data is very limited.  There are 5 variables with a total of 45 observations.  The id, supplier and product name do not have much variation.  There are 3 suppliers with corresponding product names and id.  This was a random pull of data and this isn't the best possible data to manipulate, but some days will be like this.  There is a lot of duplication on on quantities and unit costs, which falls in line with what is happening in the overall set.  
+
+What's the summary data related to cost?
+``` {r CleanUp, echo = FALSE, eval = TRUE}
+result$unit_cost<-as.numeric(result$unit_cost)
+summary(result$unit_cost)
+
+```
+
+
+
+``` {r , echo = FALSE, eval = FALSE, message = FALSE, warning = FALSE}
+install.packages("knitr")
+install.packages("kableExtra")
+
+
+```
+
+What are the totals and averages for the numeric columns quantity and cost? 
+
+``` {r Analysis, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+library(knitr)
+library(kableExtra)
+
+analy1<- result %>% group_by(supplier, product_name) %>% summarize(Total_Quantity = sum(quantity), Avg_Quantity = mean(quantity), Total_Cost = sum(unit_cost), Avg_Cost = mean(unit_cost))
+
+names(analy1)[1]<-"Supplier"
+names(analy1)[2]<-"Product_Name"
+
+analy2<- kable(analy1, format = "html") %>% kable_styling(bootstrap_options = c("striped"))
+analy2
+
+
+```
+
+
+
+
+
+## Including Plots
+
+
+Which supplier sends the most product?
+``` {r Plot, echo = FALSE, eval = TRUE}
+library(tidyverse)
+
+names(result)[3]<-"Supplier"
+names(result)[4]<-"Quantity"
+
+g<- ggplot2::ggplot(data = result, aes(x=Supplier, y = Quantity)) 
+g + geom_col() +
+  labs (title = "By Supplier")
+
+
+```
+ 
+This bar graph supports the total quantity amount by supplier and is a easy to read quick reference vs. a table as see above.  
+ 
+Overall, the data is limited but this could be a good thing when looking at a JSON file for the first time.
+ 

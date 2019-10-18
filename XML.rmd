@@ -14,6 +14,15 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
+
+The data set is "http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/data/tpc-h/part.xml"
+
+and some instructions to load the file came from https://www.datacamp.com/community/tutorials/r-data-import-tutorial#xml
+
+
+
+
+
 #  What is an XML file?
 
 An XML (Extensible Markup Language) is a data file formatted similar to an html document.  It is accessing information at the database vs. a spreadsheet format, which would require much more memory due to the duplication of information as a spreadsheet.  It uses custom tags to define objects within each object and can be thought of as a text-based database.  Common terms: node, root, tree, children, etc.  This type of file is common and can be opened by many programs depending on your operating system. They have become the standard way of storing and transferring data between programs over the internet.  More can be learned at cran.r-progect.org <https://cran.r-project.org/web/packages/XML/XML.pdf> and fileinfo.com <https://fileinfo.com/extension/xml>.
@@ -39,7 +48,7 @@ install.packages("XML")
  
 ``` {r infile, echo = TRUE, eval = TRUE}
 library(XML)
-xmlfile<-(xmlParse("http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/data/mondial/mondial-3.0.xml"))
+xmlfile<-(xmlParse("http://aiweb.cs.washington.edu/research/projects/xmltk/xmldata/data/tpc-h/part.xml")
 class(xmlfile)
 
 ```
